@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Discover Events, Festivals, Business, Food & More in Satara District" />
+  <meta name="theme-color" content="#7c3aed" />
+  <title>AATACH Satara | Events, Festivals & Business Directory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
+              400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
+              800: '#5b21b6', 900: '#4c1d95', 950: '#2e1065'
+            },
+            accent: {
+              50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74',
+              400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .leaflet-container { z-index: 1; border-radius: 0.75rem; }
+    .page { display: none; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+    .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #5b21b6; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white transition-colors duration-300">
+
+  <!-- NAVBAR -->
+  <nav class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <a href="#home" class="flex items-center gap-2" onclick="router('home')">
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white font-bold text-lg">A</div>
+        <span class="text-xl font-bold tracking-tight">AATACH <span class="text-brand-600">SATARA</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-1">
+        <a href="#events" onclick="router('events')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Events</a>
+        <a href="#today" onclick="router('today')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Today</a>
+        <a href="#weekend" onclick="router('weekend')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Weekend</a>
+        <a href="#festivals" onclick="router('festivals')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Festivals</a>
+        <a href="#business" onclick="router('business')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Business</a>
+        <a href="#pricing" onclick="router('pricing')" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800">Pricing</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          <svg id="sun-icon" class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-6.364-.386l1.591-1.591M3 12h2.25m.386-6.364l1.591 1.591M12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z"/></svg>
+          <svg id="moon-icon" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+        </button>
+        <a href="#create" onclick="router('create')" class="hidden sm:inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">List Event</a>
+        <button onclick="toggleMobileMenu()" class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 md:hidden dark:text-gray-300 dark:hover:bg-gray-800">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden border-t border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-950 md:hidden">
+      <div class="flex flex-col gap-2">
+        <a href="#events" onclick="router('events');toggleMobileMenu()" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300">Events</a>
+        <a href="#today" onclick="router('today');toggleMobileMenu()" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300">Today</a>
+        <a href="#weekend" onclick="router('weekend');toggleMobileMenu()" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300">Weekend</a>
+        <a href="#festivals" onclick="router('festivals');toggleMobileMenu()" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300">Festivals</a>
+        <a href="#business" onclick="router('business');toggleMobileMenu()" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300">Business</a>
+        <a href="#create" onclick="router('create');toggleMobileMenu()" class="mt-2 inline-flex justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white">List Your Event</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="min-h-screen">
+
+    <!-- HOME PAGE -->
+    <div id="page-home" class="page active">
+      <section class="relative overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 px-4 py-20 sm:px-6 lg:px-8">
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-white blur-3xl"></div>
+          <div class="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-accent-400 blur-3xl"></div>
+        </div>
+        <div class="relative mx-auto max-w-4xl text-center">
+          <h1 class="text-4xl font-bold tracking-tight text-white sm:text-6xl">Discover Satara</h1>
+          <p class="mt-4 text-lg text-brand-100">Events, Festivals, Business, Food & More in Satara District</p>
+          <div class="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
+            <div class="relative flex-1">
+              <svg class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              <input type="text" id="hero-search" placeholder="Search events, venues, or businesses..." class="h-14 w-full rounded-lg bg-white/95 pl-10 pr-4 text-base text-gray-900 placeholder-gray-400 backdrop-blur focus:outline-none focus:ring-2 focus:ring-brand-500" onkeydown="if(event.key==='Enter'){document.getElementById('hero-search-btn').click();}">
+            </div>
+            <button id="hero-search-btn" onclick="const q=document.getElementById('hero-search').value; if(q){location.hash='events'; setTimeout(()=>document.getElementById('search-input').value=q,100);}" class="inline-flex h-14 items-center justify-center rounded-lg bg-accent-500 px-8 font-medium text-white hover:bg-accent-600">Explore</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          <a href="#today" onclick="router('today')" class="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:hover:border-brand-800">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg></div>
+            <span class="font-medium text-gray-700 group-hover:text-brand-600 dark:text-gray-300">Today</span>
+          </a>
+          <a href="#weekend" onclick="router('weekend')" class="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:hover:border-brand-800">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 6.123 6.123 0 0112 2.25c.922 0 1.8.196 2.598.542l.003-.002z"/></svg></div>
+            <span class="font-medium text-gray-700 group-hover:text-brand-600 dark:text-gray-300">Weekend</span>
+          </a>
+          <a href="#business" onclick="router('business')" class="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:hover:border-brand-800">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-white shadow-lg"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m0 0a48.19 48.19 0 013.413.387c1.07.16 1.837 1.094 1.837 2.175v3.57c0 .621.324 1.184.85 1.483M4.5 14.15v4.25c0 1.094.787 2.036 1.872 2.18C8.456 20.82 10.585 20.963 12.75 21s4.291-.143 6.378-.42c1.085-.144 1.872-1.086 1.872-2.18v-4.25m-16.5 0a2.18 2.18 0 01-.75-1.661V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m0 0a48.19 48.19 0 013.413.387c1.07.16 1.837 1.094 1.837 2.175v3.57c0 .621-.324 1.184-.85 1.483"/></svg></div>
+            <span class="font-medium text-gray-700 group-hover:text-brand-600 dark:text-gray-300">Business</span>
+          </a>
+          <a href="#festivals" onclick="router('festivals')" class="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:hover:border-brand-800">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.654 1.654 0 00-1.153 1.53 1.654 1.654 0 01-1.652 1.654H6.843a1.654 1.654 0 01-1.652-1.654 1.654 1.654 0 00-1.153-1.53l-1.32-.377a2.25 2.25 0 01-1.632-2.163V12.553m16.5 0h1.5m-1.5 0v-1.5m1.5 0l-1.5-1.5"/></svg></div>
+            <span class="font-medium text-gray-700 group-hover:text-brand-600 dark:text-gray-300">Festivals</span>
+          </a>
+          <a href="#events" onclick="router('events')" class="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-200 hover:shadow-md dark:border-gray-800 dark:hover:border-brand-800">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg"><svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 6.123 6.123 0 0112 2.25c.922 0 1.8.196 2.598.542l.003-.002z"/></svg></div>
+            <span class="font-medium text-gray-700 group-hover:text-brand-600 dark:text-gray-300">Food</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Featured Events</h2>
+          <a href="#events" onclick="router('events')" class="flex items-center text-sm font-medium text-brand-600 hover:text-brand-700">View All <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></a>
+        </div>
+        <div id="home-featured" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Events Near You</h2>
+          <p class="mt-1 text-gray-500 dark:text-gray-400">Explore what is happening across Satara district</p>
+        </div>
+        <div id="home-map" class="h-[400px] w-full rounded-xl border border-gray-200 dark:border-gray-800"></div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="rounded-2xl bg-brand-600 px-6 py-12 text-center sm:px-12">
+          <svg class="mx-auto h-10 w-10 text-white/80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+          <h2 class="mt-4 text-2xl font-bold text-white">Stay in the loop</h2>
+          <p class="mt-2 text-brand-100">Get weekly updates on events, festivals, and happenings in Satara.</p>
+          <form onsubmit="handleNewsletter(event)" class="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row">
+            <input type="email" required placeholder="Enter your email" class="h-12 w-full rounded-lg bg-white/10 px-4 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">
+            <button type="submit" class="h-12 rounded-lg bg-accent-500 px-6 font-medium text-white hover:bg-accent-600">Subscribe</button>
+          </form>
+          <p id="newsletter-status" class="mt-3 hidden text-sm"></p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ALL EVENTS -->
+    <div id="page-events" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">All Events</h1>
+        <div class="mt-6 flex flex-col gap-4">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="relative flex-1">
+              <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              <input type="text" id="search-input" placeholder="Search events..." class="h-10 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" oninput="filterEvents()">
+            </div>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <select id="filter-category" onchange="filterEvents()" class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-40">
+              <option value="">All Categories</option>
+              <option>Festivals</option><option>Music</option><option>Food & Drink</option><option>Business</option><option>Sports</option><option>Arts</option><option>Education</option><option>Religious</option><option>Nightlife</option>
+            </select>
+            <select id="filter-location" onchange="filterEvents()" class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-48">
+              <option value="">All Locations</option>
+              <option>Satara City</option><option>Mahabaleshwar</option><option>Panchgani</option><option>Wai</option><option>Karad</option><option>Phaltan</option><option>Koregaon</option><option>Rahimatpur</option><option>Koynanagar</option><option>Thoseghar</option>
+            </select>
+            <select id="filter-date" onchange="filterEvents()" class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-40">
+              <option value="">Any Date</option>
+              <option value="today">Today</option>
+              <option value="weekend">This Weekend</option>
+              <option value="week">This Week</option>
+            </select>
+          </div>
+        </div>
+        <div id="events-grid" class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </div>
+    </div>
+
+    <!-- SINGLE EVENT -->
+    <div id="page-event" class="page">
+      <div id="event-detail-content" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"></div>
+    </div>
+
+    <!-- BUSINESS -->
+    <div id="page-business" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Business Directory</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Find hotels, restaurants, temples, banks, and more in Satara</p>
+        <div class="mt-6 flex flex-col gap-4 sm:flex-row">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <input type="text" id="business-search" placeholder="Search businesses..." class="h-10 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" oninput="filterBusinesses()">
+          </div>
+          <select id="business-category" onchange="filterBusinesses()" class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:w-48">
+            <option value="">All Categories</option>
+            <option>Hotels</option><option>Restaurants</option><option>Cafes</option><option>Shops</option><option>Temples</option><option>Banks</option><option>Hospitals</option><option>Education</option><option>Services</option>
+          </select>
+        </div>
+        <div id="business-grid" class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+      </div>
+    </div>
+
+    <!-- TODAY -->
+    <div id="page-today" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3 mb-8">
+          <svg class="h-8 w-8 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Today's Events</h1>
+        </div>
+        <p id="today-date" class="mb-8 text-gray-600 dark:text-gray-400"></p>
+        <div id="today-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </div>
+    </div>
+
+    <!-- WEEKEND -->
+    <div id="page-weekend" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3 mb-8">
+          <svg class="h-8 w-8 text-accent-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 6.123 6.123 0 0112 2.25c.922 0 1.8.196 2.598.542l.003-.002z"/></svg>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">This Weekend</h1>
+        </div>
+        <p class="mb-8 text-gray-600 dark:text-gray-400">Do not miss out on weekend fun in Satara!</p>
+        <div id="weekend-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </div>
+    </div>
+
+    <!-- FESTIVALS -->
+    <div id="page-festivals" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="rounded-2xl bg-gradient-to-r from-brand-600 to-accent-500 px-6 py-12 text-center text-white mb-8">
+          <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.654 1.654 0 00-1.153 1.53 1.654 1.654 0 01-1.652 1.654H6.843a1.654 1.654 0 01-1.652-1.654 1.654 1.654 0 00-1.153-1.53l-1.32-.377a2.25 2.25 0 01-1.632-2.163V12.553m16.5 0h1.5m-1.5 0v-1.5m1.5 0l-1.5-1.5"/></svg>
+          <h1 class="text-3xl font-bold">Festivals & Cultural Events</h1>
+          <p class="mt-2 text-brand-100">Celebrate the rich culture of Satara district</p>
+        </div>
+        <div id="festivals-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      </div>
+    </div>
+
+    <!-- CREATE EVENT -->
+    <div id="page-create" class="page">
+      <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">List Your Event</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Submit your event for free. Premium boosts available.</p>
+        <form onsubmit="handleCreateEvent(event)" class="mt-8 space-y-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Event Title</label>
+            <input type="text" name="title" required class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="e.g., Satara Music Festival">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+            <textarea name="description" required rows="4" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="Describe your event..."></textarea>
+          </div>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+              <input type="date" name="date" required class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
+              <input type="time" name="time" class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+              <select name="category" class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option>Festivals</option><option>Music</option><option>Food & Drink</option><option>Business</option><option>Sports</option><option>Arts</option><option>Education</option><option>Religious</option><option>Nightlife</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Ticket Price</label>
+              <input type="number" name="price" min="0" value="0" class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="0 for free">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+            <select name="location" class="mt-1 h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+              <option>Satara City</option><option>Mahabaleshwar</option><option>Panchgani</option><option>Wai</option><option>Karad</option><option>Phaltan</option><option>Koregaon</option><option>Rahimatpur</option><option>Koynanagar</option><option>Thoseghar</option>
+            </select>
+          </div>
+          <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-3 font-medium text-white hover:bg-brand-700">Create Event (Free)</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div id="page-pricing" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white">Pricing Plans</h1>
+          <p class="mt-4 text-lg text-gray-600 dark:text-gray-400">Choose the perfect plan for your events in Satara</p>
+        </div>
+        <div class="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div class="text-center">
+              <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+              <h3 class="mt-4 text-xl font-semibold">Free</h3>
+              <div class="mt-2"><span class="text-4xl font-bold">Rs.0</span><span class="text-gray-500">/forever</span></div>
+            </div>
+            <ul class="mt-6 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>List up to 3 events/month</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Basic event page</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Standard search placement</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Email support</li>
+            </ul>
+            <button onclick="router('create')" class="mt-8 w-full rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Get Started</button>
+          </div>
+          <div class="relative rounded-2xl border-2 border-brand-500 bg-white p-6 shadow-xl dark:bg-gray-900">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-brand-600 px-4 py-1 text-sm font-medium text-white">Most Popular</div>
+            <div class="text-center">
+              <svg class="mx-auto h-8 w-8 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+              <h3 class="mt-4 text-xl font-semibold">Premium</h3>
+              <div class="mt-2"><span class="text-4xl font-bold">Rs.999</span><span class="text-gray-500">/month</span></div>
+            </div>
+            <ul class="mt-6 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Unlimited event listings</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Featured placement</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Priority search ranking</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Analytics dashboard</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Social media promotion</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Dedicated support</li>
+            </ul>
+            <button onclick="alert('Premium upgrade coming soon!')" class="mt-8 w-full rounded-lg bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700">Upgrade Now</button>
+          </div>
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div class="text-center">
+              <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <h3 class="mt-4 text-xl font-semibold">Commission</h3>
+              <div class="mt-2"><span class="text-4xl font-bold">5%</span><span class="text-gray-500">/ticket</span></div>
+            </div>
+            <ul class="mt-6 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>All Premium features</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Razorpay integration</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Automated payouts</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Ticket management</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Attendee check-in</li>
+              <li class="flex items-start gap-2"><svg class="h-4 w-4 shrink-0 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>24/7 support</li>
+            </ul>
+            <button onclick="router('contact')" class="mt-8 w-full rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">Contact Sales</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div id="page-contact" class="page">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Contact Us</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Get in touch with the AATACH Satara team</p>
+        <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div class="space-y-6">
+            <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <div class="flex items-start gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg></div>
+                <div><h3 class="font-semibold text-gray-900 dark:text-white">Address</h3><p class="mt-1 text-sm text-gray-600 dark:text-gray-400">AATACH Satara Office<br>Near Rajpath, Satara City<br>Maharashtra, India - 415001</p></div>
+              </div>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <div class="flex items-start gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.54-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg></div>
+                <div><h3 class="font-semibold text-gray-900 dark:text-white">Phone</h3><p class="mt-1 text-sm text-gray-600 dark:text-gray-400">+91 2162 123456<br>+91 98765 43210</p></div>
+              </div>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <div class="flex items-start gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg></div>
+                <div><h3 class="font-semibold text-gray-900 dark:text-white">Email</h3><p class="mt-1 text-sm text-gray-600 dark:text-gray-400">hello@aatachsatara.com<br>support@aatachsatara.com</p></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Find Us</h2>
+            <div id="contact-map" class="h-[500px] w-full rounded-xl border border-gray-200 dark:border-gray-800"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">
+    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div>
+          <a href="#home" onclick="router('home')" class="text-xl font-bold text-gray-900 dark:text-white">AATACH <span class="text-brand-600">SATARA</span></a>
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Discover Events, Festivals, Business, Food & More in Satara District</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 dark:text-white">Discover</h3>
+          <ul class="mt-3 space-y-2 text-sm text-gray-500 dark:text-gray-400">
+            <li><a href="#events" onclick="router('events')" class="hover:text-brand-600">All Events</a></li>
+            <li><a href="#today" onclick="router('today')" class="hover:text-brand-600">Today</a></li>
+            <li><a href="#weekend" onclick="router('weekend')" class="hover:text-brand-600">This Weekend</a></li>
+            <li><a href="#festivals" onclick="router('festivals')" class="hover:text-brand-600">Festivals</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 dark:text-white">Business</h3>
+          <ul class="mt-3 space-y-2 text-sm text-gray-500 dark:text-gray-400">
+            <li><a href="#business" onclick="router('business')" class="hover:text-brand-600">Directory</a></li>
+            <li><a href="#pricing" onclick="router('pricing')" class="hover:text-brand-600">Pricing</a></li>
+            <li><a href="#create" onclick="router('create')" class="hover:text-brand-600">List Event</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 dark:text-white">Contact</h3>
+          <ul class="mt-3 space-y-2 text-sm text-gray-500 dark:text-gray-400">
+            <li class="flex items-center gap-2"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg> Satara, Maharashtra</li>
+            <li class="flex items-center gap-2"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.54-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg> +91 2162 123456</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-8 border-t border-gray-200 pt-8 text-center text-sm text-gray-400 dark:border-gray-800"> <span id="year"></span> AATACH Satara. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- TICKET MODAL -->
+  <div id="ticket-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeTicketModal()"></div>
+    <div class="relative z-50 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900">
+      <button onclick="closeTicketModal()" class="absolute right-4 top-4 text-gray-400 hover:text-gray-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Book Tickets</h2>
+      <div id="ticket-modal-content" class="mt-4"></div>
+    </div>
+  </div>
+
+  <script>
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const sat = new Date(); sat.setDate(sat.getDate() + (6 - sat.getDay()));
+    const satStr = sat.toISOString().split('T')[0];
+    const sun = new Date(sat); sun.setDate(sun.getDate()+1);
+    const sunStr = sun.toISOString().split('T')[0];
+
+    let events = [
+      { id: '1', title: 'Satara Mahotsav 2026', description: 'The biggest cultural festival of Satara featuring music, dance, food stalls, and local art exhibitions. Experience the vibrant heritage of Maharashtra.', image: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?w=800&q=80', date: satStr, time: '10:00 AM', location: 'Satara City', category: 'Festivals', price: 0, is_featured: true, is_premium: false, latitude: 17.6868, longitude: 74.0065 },
+      { id: '2', title: 'Kaas Plateau Flower Festival', description: 'Witness the stunning valley of flowers at Kaas Plateau, a UNESCO World Heritage site. Guided tours and photography workshops included.', image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80', date: tomorrowStr, time: '07:00 AM', location: 'Satara City', category: 'Festivals', price: 150, is_featured: true, is_premium: true, latitude: 17.7204, longitude: 73.8223 },
+      { id: '3', title: 'Thoseghar Waterfall Trek', description: 'Adventure trek to the majestic Thoseghar waterfalls with experienced guides. Lunch and transport included.', image: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&q=80', date: todayStr, time: '06:30 AM', location: 'Thoseghar', category: 'Sports', price: 499, is_featured: true, is_premium: false, latitude: 17.5833, longitude: 73.8833 },
+      { id: '4', title: 'Panchgani Music Festival', description: 'Annual music festival featuring indie bands, classical performances, and DJ nights under the starry skies of Panchgani.', image: 'https://images.unsplash.com/photo-1459749411177-0473ef716175?w=800&q=80', date: sunStr, time: '05:00 PM', location: 'Panchgani', category: 'Music', price: 799, is_featured: true, is_premium: true, latitude: 17.9237, longitude: 73.8007 },
+      { id: '5', title: 'Karad Food Festival', description: 'Taste the authentic flavors of Satara district. From misal pav to puran poli, experience local cuisine at its best.', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80', date: satStr, time: '11:00 AM', location: 'Karad', category: 'Food & Drink', price: 100, is_featured: false, is_premium: false, latitude: 17.2894, longitude: 74.1818 },
+      { id: '6', title: 'Sajjangad Fort Heritage Walk', description: 'Explore the historic Sajjangad fort with expert historians. Learn about the legacy of Sant Ramdas Swami.', image: 'https://images.unsplash.com/photo-1599590984817-0c15f45b64a8?w=800&q=80', date: todayStr, time: '08:00 AM', location: 'Satara City', category: 'Arts', price: 50, is_featured: false, is_premium: false, latitude: 17.6706, longitude: 73.9066 },
+      { id: '7', title: 'Satara Half Marathon', description: 'Annual half marathon through the scenic routes of Satara. Categories: 21K, 10K, 5K. Medals and certificates for all finishers.', image: 'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80', date: tomorrowStr, time: '05:30 AM', location: 'Satara City', category: 'Sports', price: 599, is_featured: false, is_premium: true, latitude: 17.6868, longitude: 74.0065 },
+      { id: '8', title: 'Wai Temple Festival', description: 'Traditional religious festival at Wai with processions, aarti ceremonies, and community feasts.', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80', date: sunStr, time: '06:00 AM', location: 'Wai', category: 'Religious', price: 0, is_featured: false, is_premium: false, latitude: 17.9480, longitude: 73.8900 },
+      { id: '9', title: 'Mahabaleshwar Strawberry Fair', description: 'Celebrate the strawberry harvest with picking sessions, dessert tastings, and farm tours.', image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=800&q=80', date: todayStr, time: '09:00 AM', location: 'Mahabaleshwar', category: 'Food & Drink', price: 250, is_featured: false, is_premium: false, latitude: 17.9237, longitude: 73.6586 },
+      { id: '10', title: 'Koyna Wildlife Photography Camp', description: 'Weekend photography camp in the Koyna wildlife sanctuary. Expert guidance on nature and wildlife photography.', image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80', date: satStr, time: '02:00 PM', location: 'Koynanagar', category: 'Education', price: 1299, is_featured: false, is_premium: true, latitude: 17.4000, longitude: 73.7667 },
+    ];
+
+    const businesses = [
+      { id: '1', name: 'Hotel Jotiba', category: 'Hotels', description: 'Premium hotel with valley views and modern amenities in the heart of Satara.', address: 'Rajpath Road, Satara City', phone: '+91 2162 234567', rating: 4.5, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80' },
+      { id: '2', name: 'Santosh Misal House', category: 'Restaurants', description: 'Famous for authentic Kolhapuri misal pav and traditional Maharashtrian breakfast.', address: 'Powai Naka, Satara', phone: '+91 98765 43210', rating: 4.8, image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80' },
+      { id: '3', name: 'Sajjangad Temple', category: 'Temples', description: 'Historic temple of Sant Ramdas Swami atop Sajjangad fort. Panoramic views of Satara.', address: 'Sajjangad, Satara', phone: '+91 2162 123456', rating: 5.0, image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80' },
+      { id: '4', name: 'Satara Co-op Bank', category: 'Banks', description: 'Main branch with ATM, locker facilities, and digital banking services.', address: 'Station Road, Satara', phone: '1800 123 456', rating: 4.2, image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=80' },
+      { id: '5', name: 'Hill View Cafe', category: 'Cafes', description: 'Cozy cafe with mountain views, specialty coffee, and homemade desserts.', address: 'Panchgani Road, Satara', phone: '+91 98765 12345', rating: 4.6, image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80' },
+      { id: '6', name: 'Satara General Hospital', category: 'Hospitals', description: 'Multi-specialty hospital with 24/7 emergency services and modern diagnostics.', address: 'Krishna Nagar, Satara', phone: '102', rating: 4.3, image: 'https://images.unsplash.com/photo-1587351021759-3e566b2af12c?w=800&q=80' },
+    ];
+
+    function router(page, param) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page)?.classList.add('active');
+      window.scrollTo(0, 0);
+      if (page === 'home') renderHome();
+      if (page === 'events') renderEvents();
+      if (page === 'event') renderEventDetail(param);
+      if (page === 'business') renderBusiness();
+      if (page === 'today') renderToday();
+      if (page === 'weekend') renderWeekend();
+      if (page === 'festivals') renderFestivals();
+      if (page === 'contact') setTimeout(initContactMap, 100);
+      document.getElementById('mobile-menu').classList.add('hidden');
+    }
+
+    window.addEventListener('hashchange', handleHash);
+    function handleHash() {
+      const hash = location.hash.replace('#', '') || 'home';
+      if (hash.startsWith('event/')) router('event', hash.split('/')[1]);
+      else router(hash);
+    }
+    window.addEventListener('DOMContentLoaded', () => { document.getElementById('year').textContent = new Date().getFullYear(); handleHash(); });
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) { html.classList.remove('dark'); document.getElementById('sun-icon').classList.add('hidden'); document.getElementById('moon-icon').classList.remove('hidden'); }
+      else { html.classList.add('dark'); document.getElementById('sun-icon').classList.remove('hidden'); document.getElementById('moon-icon').classList.add('hidden'); }
+    }
+    function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+
+    const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const formatPrice = (p) => p === 0 ? 'Free' : 'Rs.' + p.toLocaleString('en-IN');
+
+    function eventCard(e) {
+      return `<div class="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900" onclick="location.hash='event/${e.id}'">
+        <div class="relative aspect-[16/10] overflow-hidden">
+          <img src="${e.image}" alt="${e.title}" class="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy">
+          <div class="absolute top-2 left-2 flex gap-2">
+            <span class="rounded-full bg-accent-100 px-2.5 py-0.5 text-xs font-semibold text-accent-700">${e.category}</span>
+            ${e.is_premium ? '<span class="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-700">Premium</span>' : ''}
+          </div>
+        </div>
+        <div class="p-4">
+          <h3 class="font-semibold text-gray-900 line-clamp-1 group-hover:text-brand-600 dark:text-white">${e.title}</h3>
+          <div class="mt-2 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+            ${formatDate(e.date)} ${e.time ? '• ' + e.time : ''}
+          </div>
+          <div class="mt-1 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+            ${e.location}
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="font-bold text-brand-600">${formatPrice(e.price)}</span>
+            <span class="flex items-center gap-1 text-xs text-gray-400"><svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25m-5.25 3h5.25m-5.25 3h5.25M3.375 5.25c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/></svg> Book Now</span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderHome() {
+      const featured = events.filter(e => e.is_featured);
+      document.getElementById('home-featured').innerHTML = featured.map(eventCard).join('');
+      setTimeout(() => {
+        if (!document.getElementById('home-map').hasChildNodes()) {
+          const map = L.map('home-map').setView([17.6868, 74.0065], 10);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+          events.forEach(e => { if (e.latitude && e.longitude) { L.marker([e.latitude, e.longitude]).addTo(map).bindPopup(`<b>${e.title}</b><br>${e.location}<br>${formatPrice(e.price)}`); } });
+        }
+      }, 100);
+    }
+
+    function renderEvents() { filterEvents(); }
+    function filterEvents() {
+      const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+      const cat = document.getElementById('filter-category')?.value || '';
+      const loc = document.getElementById('filter-location')?.value || '';
+      const dateF = document.getElementById('filter-date')?.value || '';
+      let filtered = events.filter(e => {
+        const matchesQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q);
+        const matchesCat = !cat || e.category === cat;
+        const matchesLoc = !loc || e.location === loc;
+        let matchesDate = true;
+        if (dateF === 'today') matchesDate = e.date === todayStr;
+        if (dateF === 'weekend') matchesDate = e.date === satStr || e.date === sunStr;
+        if (dateF === 'week') { const d = new Date(e.date); const today = new Date(); matchesDate = d >= today && d <= new Date(today.getTime() + 7*24*60*60*1000); }
+        return matchesQ && matchesCat && matchesLoc && matchesDate;
+      });
+      const grid = document.getElementById('events-grid');
+      grid.innerHTML = filtered.length ? filtered.map(eventCard).join('') : `<div class="col-span-full flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700"><p class="text-gray-500">No events found matching your criteria.</p></div>`;
+    }
+
+    function renderEventDetail(id) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      const html = `
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <div class="relative aspect-[21/9] overflow-hidden rounded-2xl">
+              <img src="${e.image}" alt="${e.title}" class="h-full w-full object-cover">
+            </div>
+            <div class="mt-6">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-700">${e.category}</span>
+                ${e.is_premium ? '<span class="rounded-full bg-accent-100 px-3 py-1 text-sm font-medium text-accent-700">Premium</span>' : ''}
+              </div>
+              <h1 class="mt-4 text-3xl font-bold text-gray-900 dark:text-white">${e.title}</h1>
+              <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div class="flex items-center gap-1.5"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>${formatDate(e.date)}</div>
+                ${e.time ? `<div class="flex items-center gap-1.5"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${e.time}</div>` : ''}
+                <div class="flex items-center gap-1.5"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>${e.location}</div>
+              </div>
+              <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">About</h2>
+                <p class="mt-2 whitespace-pre-wrap text-gray-600 dark:text-gray-300">${e.description}</p>
+              </div>
+              ${e.latitude && e.longitude ? `<div class="mt-8"><h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Location</h2><div id="event-map" class="h-[300px] w-full rounded-xl border border-gray-200 dark:border-gray-800"></div></div>` : ''}
+            </div>
+          </div>
+          <div class="lg:col-span-1">
+            <div class="sticky top-24 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">Price</span>
+                <span class="text-2xl font-bold text-brand-600">${formatPrice(e.price)}</span>
+              </div>
+              <div class="mt-6 space-y-3">
+                <button onclick="openTicketModal('${e.id}')" class="w-full rounded-lg bg-brand-600 px-4 py-3 font-medium text-white hover:bg-brand-700">${e.price === 0 ? 'Register Now' : 'Book Tickets'}</button>
+                <button class="flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"><svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 019.186 0z"/></svg> Save</button>
+                <button class="flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"><svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.287.696.287 1.093m0-1.093a2.25 2.25 0 00-2.25 2.25m2.25-2.25c.18.324.287.696.287 1.093m0-1.093a2.25 2.25 0 012.25 2.25m-2.25-2.25c.18.324.287.696.287 1.093m0-1.093a2.25 2.25 0 100 2.186m0-2.186c.18.324.287.696.287 1.093"/></svg> Share</button>
+              </div>
+              <div class="mt-6 border-t border-gray-200 pt-6 dark:border-gray-700">
+                <h3 class="font-semibold text-gray-900 dark:text-white">Date & Time</h3>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">${formatDate(e.date)} ${e.time ? 'at ' + e.time : ''}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('event-detail-content').innerHTML = html;
+      setTimeout(() => {
+        if (e.latitude && e.longitude) {
+          const map = L.map('event-map').setView([e.latitude, e.longitude], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+          L.marker([e.latitude, e.longitude]).addTo(map).bindPopup(e.title);
+        }
+      }, 100);
+    }
+
+    function renderBusiness() { filterBusinesses(); }
+    function filterBusinesses() {
+      const q = document.getElementById('business-search')?.value.toLowerCase() || '';
+      const cat = document.getElementById('business-category')?.value || '';
+      let filtered = businesses.filter(b => { const matchesQ = !q || b.name.toLowerCase().includes(q) || b.address.toLowerCase().includes(q); const matchesCat = !cat || b.category === cat; return matchesQ && matchesCat; });
+      const grid = document.getElementById('business-grid');
+      grid.innerHTML = filtered.map(b => `
+        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div class="relative aspect-[16/9]">
+            <img src="${b.image}" alt="${b.name}" class="h-full w-full object-cover" loading="lazy">
+            ${b.is_premium ? '<span class="absolute top-2 right-2 rounded-full bg-accent-500 px-2 py-0.5 text-xs font-medium text-white">Premium</span>' : ''}
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between">
+              <div><h3 class="font-semibold text-gray-900 dark:text-white">${b.name}</h3><span class="mt-1 inline-block rounded-full border border-gray-200 px-2 py-0.5 text-xs dark:border-gray-700">${b.category}</span></div>
+              <div class="flex items-center gap-1 text-amber-500"><svg class="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="text-sm font-medium">${b.rating}</span></div>
+            </div>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">${b.description}</p>
+            <div class="mt-3 space-y-1 text-sm text-gray-500">
+              <div class="flex items-center gap-1.5"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>${b.address}</div>
+              ${b.phone ? `<div class="flex items-center gap-1.5"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.54-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>${b.phone}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderToday() {
+      document.getElementById('today-date').textContent = 'Happening on ' + new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+      const todayEvents = events.filter(e => e.date === todayStr);
+      document.getElementById('today-grid').innerHTML = todayEvents.length ? todayEvents.map(eventCard).join('') : `<div class="col-span-full flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700"><p class="text-gray-500">No events scheduled for today. Check back tomorrow!</p></div>`;
+    }
+
+    function renderWeekend() {
+      const weekendEvents = events.filter(e => e.date === satStr || e.date === sunStr);
+      document.getElementById('weekend-grid').innerHTML = weekendEvents.length ? weekendEvents.map(eventCard).join('') : `<div class="col-span-full flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700"><p class="text-gray-500">No weekend events found. Plan ahead!</p></div>`;
+    }
+
+    function renderFestivals() {
+      const festEvents = events.filter(e => e.category === 'Festivals' || e.category === 'Religious');
+      document.getElementById('festivals-grid').innerHTML = festEvents.length ? festEvents.map(eventCard).join('') : `<div class="col-span-full flex h-64 items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700"><p class="text-gray-500">No festivals listed currently.</p></div>`;
+    }
+
+    function initContactMap() {
+      const el = document.getElementById('contact-map');
+      if (!el || el.hasChildNodes()) return;
+      const map = L.map('contact-map').setView([17.6868, 74.0065], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      L.marker([17.6868, 74.0065]).addTo(map).bindPopup('AATACH Satara Office');
+    }
+
+    function handleNewsletter(e) {
+      e.preventDefault();
+      const status = document.getElementById('newsletter-status');
+      status.textContent = 'Thanks for subscribing!';
+      status.classList.remove('hidden', 'text-red-300');
+      status.classList.add('text-green-300');
+      e.target.reset();
+    }
+
+    function handleCreateEvent(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const newEvent = {
+        id: String(events.length + 1),
+        title: fd.get('title'),
+        description: fd.get('description'),
+        image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',
+        date: fd.get('date'),
+        time: fd.get('time'),
+        location: fd.get('location'),
+        category: fd.get('category'),
+        price: Number(fd.get('price')),
+        is_featured: false, is_premium: false, latitude: null, longitude: null
+      };
+      events.unshift(newEvent);
+      alert('Event created successfully!');
+      location.hash = 'events';
+      e.target.reset();
+    }
+
+    let currentTicketEvent = null;
+    function openTicketModal(eventId) {
+      const e = events.find(x => x.id === eventId);
+      if (!e) return;
+      currentTicketEvent = e;
+      const modal = document.getElementById('ticket-modal');
+      const content = document.getElementById('ticket-modal-content');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      content.innerHTML = `
+        <div class="space-y-4">
+          <div><h3 class="font-semibold text-lg text-gray-900 dark:text-white">${e.title}</h3><p class="text-gray-500 dark:text-gray-400">${e.location}</p></div>
+          <div class="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-gray-800"><span>Price per ticket</span><span class="font-semibold">${formatPrice(e.price)}</span></div>
+          <div>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
+            <div class="mt-1 flex items-center gap-3">
+              <button onclick="updateQty(-1)" class="rounded-lg border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">-</button>
+              <input type="number" id="ticket-qty" value="1" min="1" max="10" readonly class="h-10 w-20 rounded-lg border border-gray-300 text-center dark:border-gray-700 dark:bg-gray-800">
+              <button onclick="updateQty(1)" class="rounded-lg border border-gray-300 px-3 py-1 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">+</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700"><span class="font-semibold text-gray-900 dark:text-white">Total</span><span id="ticket-total" class="text-xl font-bold text-brand-600">${formatPrice(e.price)}</span></div>
+          <button onclick="processPayment()" class="w-full rounded-lg bg-brand-600 px-4 py-3 font-medium text-white hover:bg-brand-700">Pay Now</button>
+          <p class="text-xs text-gray-500 dark:text-gray-400 text-center">Demo mode: Razorpay checkout will open with test keys.</p>
+        </div>
+      `;
+    }
+
+    function closeTicketModal() { document.getElementById('ticket-modal').classList.add('hidden'); document.getElementById('ticket-modal').classList.remove('flex'); }
+    function updateQty(delta) {
+      const input = document.getElementById('ticket-qty');
+      let val = parseInt(input.value) + delta;
+      if (val < 1) val = 1; if (val > 10) val = 10;
+      input.value = val;
+      const total = val * currentTicketEvent.price;
+      document.getElementById('ticket-total').textContent = formatPrice(total);
+    }
+    function processPayment() {
+      const qty = parseInt(document.getElementById('ticket-qty').value);
+      const amount = qty * currentTicketEvent.price * 100;
+      if (amount === 0) { alert('Registration successful! You are now registered for ' + currentTicketEvent.title); closeTicketModal(); return; }
+      const options = {
+        key: 'rzp_test_1234567890', amount: amount, currency: 'INR', name: 'AATACH Satara', description: `Tickets for ${currentTicketEvent.title}`,
+        image: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?w=100&q=80',
+        handler: function(response) { alert('Payment successful! Payment ID: ' + response.razorpay_payment_id); closeTicketModal(); },
+        prefill: { name: '', email: '', contact: '' }, theme: { color: '#7c3aed' }
+      };
+      try { const rzp = new Razorpay(options); rzp.open(); } catch(err) { alert('Razorpay demo: In production, this would open the checkout. Amount: ' + formatPrice(amount/100)); closeTicketModal(); }
+    }
+  </script>
+</body>
+</html>
